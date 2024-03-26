@@ -130,6 +130,7 @@ compound_stmt[stmt_ty]:
     | &('class' | '@') class_def
     | &('with' | 'async') with_stmt
     | &('for' | 'async') for_stmt
+    | &('fore' | 'async') fore_stmt
     | &'try' try_stmt
     | &'while' while_stmt
     | match_stmt
@@ -384,6 +385,17 @@ for_stmt[stmt_ty]:
     | 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | 'async' 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+    | invalid_for_target
+
+# Fore statement
+# -------------
+
+fore_stmt[stmt_ty]:
+    | invalid_fore_stmt
+    | 'fore' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | 'async' 'fore' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
@@ -1288,6 +1300,10 @@ invalid_for_target:
     | 'async'? 'for' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
 
+invalid_fore_target:
+    | 'async'? 'fore' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(FORE_TARGETS, a) }
+
 invalid_group:
     | '(' a=starred_expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use starred expression here") }
@@ -1375,6 +1391,10 @@ invalid_for_stmt:
     | ['async'] 'for' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | ['async'] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
+invalid_fore_stmt:
+    | ['async'] 'fore' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | ['async'] a='fore' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'fore' statement on line %d", a->lineno) }
 invalid_def_raw:
     | ['async'] a='def' NAME [type_params] '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }

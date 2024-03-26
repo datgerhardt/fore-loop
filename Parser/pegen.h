@@ -155,7 +155,8 @@ Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t 
 typedef enum {
     STAR_TARGETS,
     DEL_TARGETS,
-    FOR_TARGETS
+    FOR_TARGETS,
+    FORE_TARGETS
 } TARGETS_TYPE;
 
 int _Pypegen_raise_decode_error(Parser *p);
