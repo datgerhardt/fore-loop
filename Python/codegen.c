@@ -213,6 +213,7 @@ static int codegen_async_with(compiler *, stmt_ty);
 static int codegen_with_inner(compiler *, stmt_ty, int);
 static int codegen_async_with_inner(compiler *, stmt_ty, int);
 static int codegen_async_for(compiler *, stmt_ty);
+static int codegen_async_fore(compiler *, stmt_ty);
 static int codegen_call_simple_kw_helper(compiler *c,
                                          location loc,
                                          asdl_keyword_seq *keywords,
@@ -2189,6 +2190,59 @@ codegen_for(compiler *c, stmt_ty s)
 }
 
 static int
+codegen_fore(compiler *c, stmt_ty s)
+{
+    location loc = LOC(s);
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
+    NEW_JUMP_TARGET_LABEL(c, end);
+
+    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_FOR_LOOP, start, end, NULL));
+
+    VISIT(c, expr, s->v.Fore.iter);
+
+    loc = LOC(s->v.Fore.iter);
+    ADDOP_I(c, loc, GET_ITER, 0);
+
+    USE_LABEL(c, start);
+    ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
+
+    /* Add NOP to ensure correct line tracing of multiline for statements.
+     * It will be removed later if redundant.
+     */
+    ADDOP(c, LOC(s->v.Fore.target), NOP);
+
+    USE_LABEL(c, body);
+    VISIT(c, expr, s->v.Fore.target);
+    VISIT_SEQ(c, stmt, s->v.Fore.body);
+
+    // simulate jump 4 times
+    for (int i = 0; i < 3; i++) {
+        ADDOP_JUMP(c, NO_LOCATION, FOR_ITER, cleanup);
+        ADDOP(c, NO_LOCATION, POP_TOP);
+    }
+
+    /* Mark jump as artificial */
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, start); // TODO: set jump by 4
+
+    USE_LABEL(c, cleanup);
+    /* It is important for instrumentation that the `END_FOR` comes first.
+    * Iteration over a generator will jump to the first of these instructions,
+    * but a non-generator will jump to the second instruction.
+    */
+    ADDOP(c, NO_LOCATION, END_FOR);
+    ADDOP(c, NO_LOCATION, POP_ITER);
+
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
+
+    VISIT_SEQ(c, stmt, s->v.Fore.orelse);
+
+    USE_LABEL(c, end);
+    return SUCCESS;
+}
+
+static int
 codegen_async_for(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
@@ -2232,6 +2286,55 @@ codegen_async_for(compiler *c, stmt_ty s)
 
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
+
+    USE_LABEL(c, end);
+    return SUCCESS;
+}
+
+static int
+codegen_async_fore(compiler *c, stmt_ty s)
+{
+    location loc = LOC(s);
+
+    NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, except);
+    NEW_JUMP_TARGET_LABEL(c, end);
+
+    VISIT(c, expr, s->v.AsyncFore.iter);
+    ADDOP(c, LOC(s->v.AsyncFore.iter), GET_AITER);
+
+    USE_LABEL(c, start);
+    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start, end, NULL));
+
+    /* SETUP_FINALLY to guard the __anext__ call */
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
+    ADDOP(c, loc, GET_ANEXT);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
+    ADD_YIELD_FROM(c, loc, 1);
+    ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
+    ADDOP(c, loc, NOT_TAKEN);
+
+    /* Success block for __anext__ */
+    VISIT(c, expr, s->v.AsyncFore.target);
+    VISIT_SEQ(c, stmt, s->v.AsyncFore.body);
+    /* Mark jump as artificial */
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
+
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start);
+
+    /* Except block for __anext__ */
+    USE_LABEL(c, except);
+
+    /* Use same line number as the iterator,
+     * as the END_ASYNC_FOR succeeds the `for`, not the body. */
+    loc = LOC(s->v.AsyncFore.iter);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
+
+    /* `else` block */
+    VISIT_SEQ(c, stmt, s->v.AsyncFore.orelse);
 
     USE_LABEL(c, end);
     return SUCCESS;
@@ -3137,6 +3240,9 @@ codegen_visit_stmt(compiler *c, stmt_ty s)
     case For_kind:
         CODEGEN_COND_BLOCK(codegen_for, c, s);
         break;
+    case Fore_kind:
+        CODEGEN_COND_BLOCK(codegen_fore, c, s);
+        break;
     case While_kind:
         CODEGEN_COND_BLOCK(codegen_while, c, s);
         break;
@@ -3203,8 +3309,10 @@ codegen_visit_stmt(compiler *c, stmt_ty s)
     case AsyncFor_kind:
         CODEGEN_COND_BLOCK(codegen_async_for, c, s);
         break;
+    case AsyncFore_kind:
+        CODEGEN_COND_BLOCK(codegen_async_fore, c, s);
+        break;
     }
-
     return SUCCESS;
 }
 

@@ -752,6 +752,15 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
         break;
     }
+    case Fore_kind: {
+        CALL(astfold_expr, expr_ty, node_->v.Fore.target);
+        CALL(astfold_expr, expr_ty, node_->v.Fore.iter);
+        BEFORE_LOOP_BODY(state, node_);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.Fore.body);
+        AFTER_LOOP_BODY(state);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.Fore.orelse);
+        break;
+    }
     case AsyncFor_kind: {
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.iter);
@@ -759,6 +768,15 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.body);
         AFTER_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.orelse);
+        break;
+    }
+    case AsyncFore_kind: {
+        CALL(astfold_expr, expr_ty, node_->v.AsyncFore.target);
+        CALL(astfold_expr, expr_ty, node_->v.AsyncFore.iter);
+        BEFORE_LOOP_BODY(state, node_);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFore.body);
+        AFTER_LOOP_BODY(state);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFore.orelse);
         break;
     }
     case While_kind: {

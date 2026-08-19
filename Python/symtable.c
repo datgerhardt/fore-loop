@@ -2107,6 +2107,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         LEAVE_CONDITIONAL_BLOCK(st);
         break;
     }
+    case Fore_kind: {
+        VISIT(st, expr, s->v.Fore.target);
+        VISIT(st, expr, s->v.Fore.iter);
+        ENTER_CONDITIONAL_BLOCK(st);
+        VISIT_SEQ(st, stmt, s->v.Fore.body);
+        if (s->v.Fore.orelse)
+            VISIT_SEQ(st, stmt, s->v.Fore.orelse);
+        LEAVE_CONDITIONAL_BLOCK(st);
+        break;
+    }
+
     case While_kind: {
         VISIT(st, expr, s->v.While.test);
         ENTER_CONDITIONAL_BLOCK(st);
@@ -2357,6 +2368,20 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.AsyncFor.body);
         if (s->v.AsyncFor.orelse)
             VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
+        LEAVE_CONDITIONAL_BLOCK(st);
+        break;
+    }
+    case AsyncFore_kind: {
+        maybe_set_ste_coroutine_for_module(st, s);
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
+            return 0;
+        }
+        VISIT(st, expr, s->v.AsyncFore.target);
+        VISIT(st, expr, s->v.AsyncFore.iter);
+        ENTER_CONDITIONAL_BLOCK(st);
+        VISIT_SEQ(st, stmt, s->v.AsyncFore.body);
+        if (s->v.AsyncFore.orelse)
+            VISIT_SEQ(st, stmt, s->v.AsyncFore.orelse);
         LEAVE_CONDITIONAL_BLOCK(st);
         break;
     }
