@@ -140,6 +140,7 @@ compound_stmt[stmt_ty]:
     | &('class' | '@') class_def
     | &('with' | 'async') with_stmt
     | &('for' | 'async') for_stmt
+    | &('fore' | 'async') fore_stmt
     | &'try' try_stmt
     | &'while' while_stmt
     | match_stmt
@@ -414,6 +415,18 @@ for_stmt[stmt_ty]:
     | 'async' 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
+
+# Fore statement
+# -------------
+
+fore_stmt[stmt_ty]:
+    | invalid_fore_stmt
+    | 'fore' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        _PyAST_Fore(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | 'async' 'fore' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        CHECK_VERSION(stmt_ty, 5, "Async fore loops are", _PyAST_AsyncFore(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+    | invalid_fore_target
+
 
 # With statement
 # --------------
@@ -1048,6 +1061,9 @@ kvpair[KeyValuePair*]: a=expression ':' b=expression { _PyPegen_key_value_pair(p
 for_if_clauses[asdl_comprehension_seq*]:
     | a[asdl_comprehension_seq*]=for_if_clause+ { a }
 
+fore_if_clauses[asdl_comprehension_seq*]:
+    | a[asdl_comprehension_seq*]=fore_if_clause+ { a }
+
 for_if_clause[comprehension_ty]:
     | 'async' 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
@@ -1055,6 +1071,14 @@ for_if_clause[comprehension_ty]:
         _PyAST_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_if_clause
     | invalid_for_target
+
+fore_if_clause[comprehension_ty]:
+    | 'async' 'fore' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+        CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
+    | 'fore' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+        _PyAST_comprehension(a, b, c, 0, p->arena) }
+    | invalid_fore_if_clause
+    | invalid_fore_target
 
 listcomp[expr_ty]:
     | '[' a=star_named_expression b=for_if_clauses ']' { _PyAST_ListComp(a, b, EXTRA) }
@@ -1421,9 +1445,15 @@ invalid_with_item:
 invalid_for_if_clause:
     | 'async'? 'for' (bitwise_or (',' bitwise_or)* [',']) !'in' {
         RAISE_SYNTAX_ERROR("'in' expected after for-loop variables") }
+invalid_fore_if_clause:
+    | 'async'? 'fore' (bitwise_or (',' bitwise_or)* [',']) !'in' {
+        RAISE_SYNTAX_ERROR("'in' expected after fore-loop variables") }
 
 invalid_for_target:
     | 'async'? 'for' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
+invalid_fore_target:
+    | 'async'? 'fore' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
 
 invalid_group:
@@ -1549,6 +1579,10 @@ invalid_for_stmt:
     | ['async'] 'for' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | ['async'] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
+invalid_fore_stmt:
+    | ['async'] 'fore' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | ['async'] a='fore' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'fore' statement on line %d", a->lineno) }
 invalid_def_raw:
     | ['async'] a='def' NAME [type_params] '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
