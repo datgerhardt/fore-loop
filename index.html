@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python For-Loop Compilation</title>
+    <style>
+:root {
+    --bg-color: #f3efe6;
+    --text-main: #1a1a1a;
+    --text-muted: #4a4a4a;
+    --accent-color: #d34927;
+    --border-color: #dfdbd0;
+    
+    --font-serif: 'DM Serif Display', 'Georgia', serif;
+    --font-sans: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'Fira Code', 'Courier New', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Top Bar */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo .title {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    line-height: 1.1;
+}
+
+.logo .subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.top-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn {
+    background: transparent;
+    border: 1px solid #ccc5b6;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.btn.icon-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* Main Container */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    flex: 1;
+}
+
+/* Hero Section */
+.hero-section {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.category {
+    font-family: var(--font-mono);
+    color: var(--accent-color);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.main-title {
+    font-family: var(--font-serif);
+    font-size: 5rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+/* TLDR Section */
+.tldr-section {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 3rem;
+}
+
+.tldr-label {
+    color: var(--accent-color);
+}
+
+/* Article Content */
+.article-content {
+    font-size: 1.2rem;
+    color: var(--text-main);
+    margin-bottom: 4rem;
+}
+
+.article-content p {
+    margin-bottom: 1.5rem;
+}
+
+.article-content code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: rgba(0,0,0,0.04);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+}
+
+/* Stages Visualization */
+.dictionary-stages {
+    margin-top: 4rem;
+}
+
+.stage-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover {
+    color: var(--text-main);
+}
+
+.nav-btn.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.stage-panels {
+    background: #fbf9f4;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.stage-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.stage-panel.active {
+    display: block;
+}
+
+.panel-desc {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.command-line {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent-color);
+    background: rgba(211, 73, 39, 0.08);
+    padding: 0.5rem 1rem;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid #e1dbce;
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.code-window pre {
+    background: #ebe6d9;
+    padding: 1.5rem;
+    border-radius: 0 0 6px 6px;
+    overflow-x: auto;
+    border: 1px solid #e1dbce;
+    margin-top: 0;
+}
+
+/* Fallback for panels without command line */
+.stage-panel > .code-window pre:first-child {
+    border-radius: 6px;
+}
+
+.code-window code {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+/* Footer / Bottom Bar */
+.bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+
+.page-indicator {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 3.5rem;
+    }
+    .top-bar, .bottom-bar {
+        padding: 1rem;
+    }
+    .container {
+        padding: 2rem 1rem;
+    }
+    .stage-nav {
+        flex-wrap: wrap;
+    }
+}
+    </style>
+    <!-- Google Fonts for Serif (Headings) and Monospace/Sans (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Fira+Code:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+
+    <main class="container">
+        
+        <div class="hero-section">
+            <div class="category">THE BASICS</div>
+            <h1 class="main-title">for-loop</h1>
+        </div>
+
+        <div class="tldr-section">
+            <span class="tldr-label">TLDR:</span> How your code transforms from human-readable text to machine instructions.
+        </div>
+
+        <div class="article-content">
+            <p>If you've ever written a <code>for</code> loop in Python, you already understand iteration. But underneath, Python goes through multiple stages to translate your logic into something the virtual machine can execute.</p>
+            
+            <p>Your CPU doesn't understand source code. It can't read variables, parse indents, or understand Python syntax. But it doesn't need to. The Python interpreter acts as the middleman, breaking your code down step by step.</p>
+        </div>
+
+        <!-- Stages Visualization -->
+        <div class="dictionary-stages">
+            
+            <!-- Navigation -->
+            <div class="stage-nav">
+                <button class="nav-btn active" data-stage="1">1. Source</button>
+                <button class="nav-btn" data-stage="2">2. Tokens</button>
+                <button class="nav-btn" data-stage="3">3. AST</button>
+                <button class="nav-btn" data-stage="4">4. Bytecode</button>
+            </div>
+
+            <div class="stage-panels">
+                
+                <!-- Stage 1 -->
+                <div class="stage-panel active" id="stage-1">
+                    <p class="panel-desc">The journey begins with human-readable Python source code.</p>
+                    <div class="command-line">$ cat loop.py</div>
+                    <div class="code-window">
+                        <pre><code>for i in range(3):
+    print(i)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Stage 2 -->
+                <div class="stage-panel" id="stage-2">
+                    <p class="panel-desc">The lexer breaks the raw text into a sequence of tokens.</p>
+                    <div class="command-line">$ ./python.exe -m tokenize loop.py</div>
+                    <div class="code-window">
+                        <pre><code>0,0-0,0:            ENCODING       'utf-8'
+1,0-1,3:            NAME           'for'
+1,4-1,5:            NAME           'i'
+1,6-1,8:            NAME           'in'
+1,9-1,14:           NAME           'range'
+1,14-1,15:          OP             '('
+1,15-1,16:          NUMBER         '3'
+1,16-1,17:          OP             ')'
+1,17-1,18:          OP             ':'
+1,18-1,19:          NEWLINE        '\n'
+2,0-2,4:            INDENT         '    '
+2,4-2,9:            NAME           'print'
+...</code></pre>
+                    </div>
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="stage-panel" id="stage-3">
+                    <p class="panel-desc">The parser organizes the tokens into an Abstract Syntax Tree (AST).</p>
+                    <div class="command-line">$ ./python.exe -c "import ast; print(ast.dump(ast.parse(open('loop.py').read()), indent=2))"</div>
+                    <div class="code-window">
+                        <pre><code>Module(
+  body=[
+    For(
+      target=Name(id='i', ctx=Store()),
+      iter=Call(
+        func=Name(id='range'),
+        args=[Constant(value=3)]),
+      body=[
+        Expr(value=Call(func=Name(id='print'), args=[Name(id='i')]))
+      ]
+    )
+  ]
+)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Stage 4 -->
+                <div class="stage-panel" id="stage-4">
+                    <p class="panel-desc">The compiler translates the AST into bytecode instructions.</p>
+                    <div class="command-line">$ ./python.exe -m dis loop.py</div>
+                    <div class="code-window">
+                        <pre><code>  0           RESUME                   0
+
+  1           LOAD_NAME                0 (range)
+              PUSH_NULL
+              LOAD_SMALL_INT           3
+              CALL                     1
+              GET_ITER                 0
+      L1:     FOR_ITER                11 (to L2)
+              STORE_NAME               1 (i)
+
+  2           LOAD_NAME                2 (print)
+              PUSH_NULL
+              LOAD_NAME                1 (i)
+              CALL                     1
+              POP_TOP
+              JUMP_BACKWARD           13 (to L1)
+
+  1   L2:     END_FOR
+              POP_ITER
+              LOAD_COMMON_CONSTANT     7 (None)
+              RETURN_VALUE</code></pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    
+        <div class="hero-section" style="margin-top: 6rem;">
+            <div class="category">THE JOKE</div>
+            <h1 class="main-title">fore-loop</h1>
+        </div>
+
+        <div class="tldr-section">
+            <span class="tldr-label">TLDR:</span> A custom Python loop that skips ahead by 4. Because it's a "fore" loop! Get it?
+        </div>
+
+        <div class="article-content">
+            <p>Wait, a <code>fore</code> loop? Yes, we modified the actual Python C source code—specifically <code>Grammar/python.gram</code> and <code>Parser/Python.asdl</code>—to add a brand new keyword! It works just like a <code>for</code> loop, except it throws away three items for every one it processes. It steps by four!</p>
+            
+            <p>After defining the syntax, we told the compiler to generate three extra <code>FOR_ITER</code> instructions to skip the next three items. Let's see how it compiles from start to finish!</p>
+        </div>
+
+        <!-- Fore Stages Visualization -->
+        <div class="dictionary-stages">
+            
+            <!-- Navigation -->
+            <div class="stage-nav">
+                <button class="nav-btn active" data-stage="fore-1">1. Source</button>
+                <button class="nav-btn" data-stage="fore-2">2. Tokens</button>
+                <button class="nav-btn" data-stage="fore-3">3. AST</button>
+                <button class="nav-btn" data-stage="fore-4">4. Bytecode</button>
+            </div>
+
+            <div class="stage-panels">
+                
+                <!-- Stage 1 -->
+                <div class="stage-panel active" id="stage-fore-1">
+                    <p class="panel-desc">We write our custom <code>fore</code> loop, expecting it to step by 4.</p>
+                    <div class="command-line">$ cat fore_loop.py</div>
+                    <div class="code-window">
+                        <pre><code>fore i in range(10):
+    print(i)</code></pre>
+                    </div>
+                </div>
+
+                <!-- Stage 2 -->
+                <div class="stage-panel" id="stage-fore-2">
+                    <p class="panel-desc">The lexer spots our shiny new <code>fore</code> keyword.</p>
+                    <div class="command-line">$ ./python.exe -m tokenize fore_loop.py</div>
+                    <div class="code-window">
+                        <pre><code>0,0-0,0:            ENCODING       'utf-8'
+1,0-1,4:            NAME           'fore'
+1,5-1,6:            NAME           'i'
+1,7-1,9:            NAME           'in'
+1,10-1,15:          NAME           'range'
+1,15-1,16:          OP             '('
+1,16-1,18:          NUMBER         '10'
+1,18-1,19:          OP             ')'
+1,19-1,20:          OP             ':'
+1,20-1,21:          NEWLINE        '\n'
+2,0-2,4:            INDENT         '    '
+2,4-2,9:            NAME           'print'
+...</code></pre>
+                    </div>
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="stage-panel" id="stage-fore-3">
+                    <p class="panel-desc">The parser creates a custom <code>Fore</code> node in the Abstract Syntax Tree.</p>
+                    <div class="command-line">$ ./python.exe -c "import ast..."</div>
+                    <div class="code-window">
+                        <pre><code>Module(
+  body=[
+    Fore(
+      target=Name(id='i', ctx=Store()),
+      iter=Call(
+        func=Name(id='range'),
+        args=[
+          Constant(value=10)]),
+      body=[
+        Expr(
+          value=Call(
+            func=Name(id='print'),
+            args=[
+              Name(id='i')]))])])</code></pre>
+                    </div>
+                </div>
+
+                <!-- Stage 4 -->
+                <div class="stage-panel" id="stage-fore-4">
+                    <p class="panel-desc">The compiler adds extra <code>FOR_ITER</code> instructions to skip 3 items every time! 🤯</p>
+                    <div class="command-line">$ ./python.exe -m dis fore_loop.py</div>
+                    <div class="code-window">
+                        <pre><code>  0           RESUME                   0
+
+  1           LOAD_NAME                0 (range)
+              PUSH_NULL
+              LOAD_SMALL_INT          10
+              CALL                     1
+              GET_ITER                 0
+      L1:     FOR_ITER                32 (to L5)
+              STORE_NAME               1 (i)
+
+  2           LOAD_NAME                2 (print)
+              PUSH_NULL
+              LOAD_NAME                1 (i)
+              CALL                     1
+              POP_TOP
+              FOR_ITER                17 (to L4)
+              POP_TOP
+              FOR_ITER                10 (to L3)
+              POP_TOP
+              FOR_ITER                 3 (to L2)
+              POP_TOP
+              JUMP_BACKWARD           22 (to L1)
+...</code></pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+
+
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const stageContainers = document.querySelectorAll('.dictionary-stages');
+
+    stageContainers.forEach(container => {
+        const navBtns = container.querySelectorAll('.nav-btn');
+        const stagePanels = container.querySelectorAll('.stage-panel');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from buttons and panels in THIS container
+                navBtns.forEach(b => b.classList.remove('active'));
+                stagePanels.forEach(p => p.classList.remove('active'));
+
+                // Add active class to clicked button
+                btn.classList.add('active');
+
+                // Show corresponding panel
+                const stageId = btn.getAttribute('data-stage');
+                const targetPanel = document.getElementById(`stage-${stageId}`);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+            });
+        });
+    });
+});
+    </script>
+</body>
+</html>

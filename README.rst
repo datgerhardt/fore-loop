@@ -1,6 +1,8 @@
 This is Python version 3.16.0 alpha 0
 =====================================
 
+Deck: https://docs.google.com/presentation/d/1U-6duKQnOzAN7hI53w4VpcdJkQphlsrIYQShqJqSfMw/edit?slide=id.g3f76d5bbcc8_1_538#slide=id.g3f76d5bbcc8_1_538
+
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
